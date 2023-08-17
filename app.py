@@ -1,11 +1,10 @@
-#Libraries
-
-import pickle
+from pickle5 import pickle
 import numpy as np
 import os
 from tqdm import tqdm
 import json
-import keras
+import joblib
+
 
 #from tensorflow.keras.applications.vgg16 import VGG16, preprocess_input
 #from tensorflow.keras.applications.resnet50 import ResNet50
@@ -33,12 +32,18 @@ from gevent.pywsgi import WSGIServer
 app = Flask(__name__)
 
 # load features form pickle
-with open(os.path.join(os.getcwd(), 'features2.pkl'), "rb") as f:
-  features = pickle.load(f)
+# with open(os.path.join(os.getcwd(), 'features2.pickle'), "rb") as f:
+#   features = pickle.load(f)
 
 # load features form pickle
-with open(os.path.join(os.getcwd(), 'tokenizer2.pkl'), "rb") as f:
-  tokenizer = pickle.load(f)
+# with open(os.path.join(os.getcwd(), 'tokenizer2.pkl'), "rb") as f:
+#   tokenizer = pickle.load(f)
+
+features = joblib.load(os.path.join(os.getcwd(), 'features2.pkl'))
+all_captions = joblib.load(os.path.join(os.getcwd(), 'all_captions.pkl'))
+tokenizer = Tokenizer()
+tokenizer.fit_on_texts(all_captions)
+vocab_size = len(tokenizer.word_index) + 1
 
 
 # Opening JSON file
@@ -118,6 +123,7 @@ def predict_caption(model, image, tokenizer, max_length):
         in_text += " " + word
         # stop if we reach end tag
         if word == 'endseq':
+            in_text += ' ' + 'endseq'
             break
       
     return in_text
@@ -130,9 +136,12 @@ def generate_caption(image_name, model):
     image = Image.open(img_path)
     # predict the caption
     y_pred = predict_caption(model, features[image_id], tokenizer, max_length)
-    #print('--------------------Predicted--------------------')
-    #print(y_pred)
-    #plt.imshow(image)
+
+    y_pred = y_pred.replace("startseq", "")
+    y_pred = y_pred.replace("endseq", "")
+    y_pred = y_pred.lstrip()
+    y_pred = y_pred.rstrip()
+
     return y_pred
 
 
@@ -167,4 +176,5 @@ def upload():
 
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0', port=7860)
+
 
