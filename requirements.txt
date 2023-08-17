@@ -25,4 +25,4 @@ opencv-python>=4.5.5.64
 llvmlite==0.38.1
 numba==0.55.2
 pickle5
-
+joblib
